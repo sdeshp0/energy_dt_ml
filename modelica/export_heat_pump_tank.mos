@@ -1,0 +1,12 @@
+// run from inside the modelica folder, see build_fmus.sh
+// The library paths below are where build_fmus.sh mounts them.
+loadFile("/libs/msl/Modelica/package.mo"); getErrorString();
+loadFile("/libs/msl/ModelicaServices/package.mo"); getErrorString();
+loadFile("/libs/msl/Complex.mo"); getErrorString();
+loadFile("/libs/buildings/Buildings/package.mo"); getErrorString();
+loadFile("HeatPumpTank.mo"); getErrorString();
+checkModel(HeatPumpTank); getErrorString();
+// Without this flag the co-simulation FMU uses forward Euler with a fixed
+// step, which blew up when stepped hourly. CVODE picks its own internal steps.
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+buildModelFMU(HeatPumpTank, version="2.0", fmuType="cs", fileNamePrefix="HeatPumpTank"); getErrorString();

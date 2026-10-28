@@ -1,0 +1,4 @@
+// run from inside the modelica folder, see build_fmus.sh
+loadFile("/libs/msl/Modelica/package.mo"); getErrorString();
+loadFile("SimpleTank.mo"); getErrorString();
+buildModelFMU(SimpleTank, version="2.0", fmuType="cs", fileNamePrefix="SimpleTank"); getErrorString();
