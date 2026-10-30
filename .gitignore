@@ -21,17 +21,5 @@ env/
 .DS_Store
 
 # ---- this project ----
-# downloaded and generated data, re-create with the phase0 scripts
+# downloaded and generated data, re-create by running the notebooks in order
 data/
-
-# OpenModelica build output (re-create with modelica/build_fmus.sh)
-modelica/*.fmu
-modelica/*.log
-modelica/*.json
-modelica/*.makefile
-modelica/*.libs
-modelica/*.c
-modelica/*.h
-modelica/*.o
-modelica/index.html
-modelica/*_res.mat

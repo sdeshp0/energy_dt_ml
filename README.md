@@ -1,28 +1,31 @@
 # energy_dt_ml
 
-A side project: a digital twin of a (made-up) food processing plant in
-Fresno, CA, that needs process heat and electricity. The plan is to mix
-physics models, ML forecasting and optimization, and see what actually
-helps:
+A side project: an energy model of a (made-up) food processing plant in
+Fresno, CA, that needs process heat and electricity. The plan is to combine
+physics models, ML forecasting and optimization and see what actually
+helps.
 
-- **loadcast** makes the plant's heat / cold / electricity demand
-- **pvlib** + NREL NSRDB weather for rooftop PV
-- **CAISO** day-ahead prices and grid CO2 (via **gridstatus**)
-- a **Modelica** heat pump + hot water tank (Buildings Library), exported as
-  an FMU and run from Python with **FMPy**, as the "real plant"
-- **Nixtla** forecasters and **PyPSA** for scheduling (later phases)
+I know the energy side but I'm learning the modelling tools as I go, so
+phase 0 is just notebooks: one per tool, poking at it in a controlled way.
+The [experiment log](notes/experiment_log.md) has what I tried, including
+the stuff that didn't work.
 
-I'm learning the modelling side as I go, so there's an
-[experiment log](notes/experiment_log.md) with what I tried, including the
-stuff that didn't work.
+## Phase 0 notebooks
 
-## Status
+Run them in order. Each one saves a small CSV to `data/` that the next one
+uses.
 
-- [x] **Phase 0**: environment, data pulls, Modelica FMU test
-- [ ] Phase 1: site model (PV, heat pump COP, simple tank, battery)
-- [ ] Phase 2: PyPSA scheduling with perfect foresight
-- [ ] Phase 3: forecasting (naive vs statistical vs LightGBM)
-- [ ] Phase 4: Modelica plant in the loop
+| notebook | tool | what I'm figuring out |
+|---|---|---|
+| [01_loadcast](notebooks/01_loadcast.ipynb) | [loadcast](https://github.com/Matt-haug/loadcast) | what the plant's heat / cold / electricity demand looks like, and what the settings do |
+| [02_pvlib](notebooks/02_pvlib.ipynb) | [pvlib](https://pvlib-python.readthedocs.io) | how much PV a Fresno rooftop makes, and when |
+| [03_tespy](notebooks/03_tespy.ipynb) | [TESPy](https://tespy.readthedocs.io) | heat pump COP vs outdoor temperature, which refrigerants work |
+| [04_pypsa](notebooks/04_pypsa.ipynb) | [PyPSA](https://pypsa.org) | a year of cheapest operation using all of the above, plus storage and sizing experiments |
+
+**Heads up:** the committed notebooks were run without access to NREL or
+CAISO, so the weather is a clear-sky model and the electricity price is a
+made-up duck curve. Both are clearly labelled in the notebooks. With an
+NREL key (and `DOWNLOAD_PRICES = True` in notebook 04) they use real data.
 
 ## Setup
 
@@ -31,49 +34,19 @@ python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env             # then put your NREL API key + email in it
-python phase0/01_check_setup.py
+cp .env.example .env             # optional: NREL API key + email for real weather
+jupyter lab
 ```
 
 Free NREL API key: https://developer.nlr.gov/signup/ (NREL's developer site
 moved from developer.nrel.gov).
 
-## Phase 0 scripts
+All the site settings (location, year, plant size, price node) are in
+[`config.py`](config.py).
 
-Run from the repo root, in order. All the site settings (location, year,
-plant size, price node) are in [`config.py`](config.py).
+## Status
 
-| script | what it does | needs |
-|---|---|---|
-| `phase0/01_check_setup.py` | checks imports and keys | |
-| `phase0/02_demand_loadcast.py` | a year of demand + experiments on loadcast's settings | |
-| `phase0/03_weather_nsrdb.py` | a year of weather for Fresno + rough PV check | NREL key |
-| `phase0/04_prices_caiso.py` | CAISO day-ahead hourly prices (slow, month by month) | |
-| `phase0/05_co2_caiso.py` | hourly grid CO2 from the CAISO fuel mix (slow) | |
-
-Data goes into `data/` (not in git, just re-run the scripts).
-
-## Modelica FMU test
-
-Needs Docker. OpenModelica runs in a container so nothing else to install.
-
-```bash
-# one time: get the Modelica libraries (next to this repo, not inside it)
-mkdir -p ../mlibs && cd ../mlibs
-git clone --depth 1 --branch v4.1.0  https://github.com/modelica/ModelicaStandardLibrary.git msl
-git clone --depth 1 --branch v14.0.0 https://github.com/lbl-srg/modelica-buildings.git buildings
-cd -
-
-bash modelica/build_fmus.sh                            # builds SimpleTank.fmu and HeatPumpTank.fmu
-python modelica/step_fmu.py modelica/HeatPumpTank.fmu  # steps it hourly for 48 h, saves a plot
-```
-
-## Layout
-
-```
-config.py            site settings, used by every script
-phase0/              data pulls and setup checks
-modelica/            plant models (.mo), build script, FMU stepping script
-notes/               experiment log and plots
-data/                downloaded/generated data (git-ignored)
-```
+- [x] **Phase 0**: learn the tools in notebooks
+- [ ] Phase 1: site model (fix sizes, real prices and weather, tariff)
+- [ ] Phase 2: scheduling with perfect foresight vs simple rules
+- [ ] Phase 3: forecasting (naive vs statistical vs LightGBM)
