@@ -21,10 +21,13 @@ uses.
 | [02_pvlib](notebooks/02_pvlib.ipynb) | [pvlib](https://pvlib-python.readthedocs.io) | how much PV a Fresno rooftop makes, and when |
 | [03_tespy](notebooks/03_tespy.ipynb) | [TESPy](https://tespy.readthedocs.io) | heat pump COP vs outdoor temperature, which refrigerants work |
 | [04_pypsa](notebooks/04_pypsa.ipynb) | [PyPSA](https://pypsa.org) | a year of cheapest operation using all of the above, plus storage and sizing experiments |
+| [05_sizing_calculator](notebooks/05_sizing_calculator.ipynb) | all of the above | **sliders**: pick sizes and prices and see the yearly cost and payback vs a gas boiler, or let PyPSA choose the sizes |
 
 **Heads up:** the committed notebooks were run without access to NREL or
 CAISO, so the weather is a clear-sky model and the electricity price is a
-made-up duck curve. Both are clearly labelled in the notebooks. With an
+made-up duck curve. Both are clearly labelled in the notebooks. The
+sliders in notebook 05 only work when you run it yourself (GitHub shows the
+saved default run). With an
 NREL key (and `DOWNLOAD_PRICES = True` in notebook 04) they use real data.
 
 ## Setup

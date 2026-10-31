@@ -3,6 +3,7 @@
 
 # --- notebooks ---
 jupyter
+ipywidgets            # sliders in notebook 05
 
 # --- phase 0 ---
 pandas>=2.2,<3        # gridstatus needs pandas 2.x

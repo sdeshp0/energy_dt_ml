@@ -13,6 +13,7 @@ Running notes on what I tried, what worked and what didn't. The details
 | 02 pvlib | ✅ (clear-sky weather) | ~1,750 kWh/kWp with losses; ModelChain and by-hand disagree until you know about the 14% PVWatts losses |
 | 03 TESPy | ✅ | R1233zd(E) works for 90 °C; R134a and propane don't; online tutorials use an old API |
 | 04 PyPSA | ✅ (made-up prices) | a hot water tank is the big win; the electricity tariff decides heat pump vs boiler |
+| 05 sizing calculator | ✅ (made-up prices) | sliders + "let PyPSA size it"; gas price and grid charges decide everything |
 
 ### Environment
 
@@ -103,6 +104,52 @@ Running notes on what I tried, what worked and what didn't. The details
   important missing input.
 - A full year solves in ~2 s with HiGHS.
 
+### 05 Sizing calculator
+
+Sliders for heat pump, tank, battery, PV, grid charges, gas price and
+demand charge. Calculator mode compares your design with "gas boiler only"
+(yearly cost, upfront cost, payback). Sizing mode lets PyPSA pick the sizes,
+paying a yearly share of each one's installed cost (rough guesses: heat pump
+$700/kW, tank $25/kWh, battery $400/kWh, PV $1,600/kWp, 7% over their
+lifetimes).
+
+- **Didn't work: too slow.** A full-year sizing run took 25-50 s. Useless
+  with sliders.
+- **Fix: model every 4th week** (13 weeks, still hourly), each hour counted
+  ~4 times. Now ~6 s per run (including the business-as-usual comparison).
+- **Didn't work at first: the shortcut broke the storage.** I weighted every
+  hour by 4 everywhere, including the storage equations, so each hour of
+  charging counted as 4 hours. The tank came out at 0.5 MWh instead of 2.9.
+  Fix: weight costs and energy by 4, but keep storage at 1. After that the
+  shortcut matches the full year closely (heat pump 930 vs 928 kW, tank
+  3.0 vs 2.9 MWh).
+- Equipment slider widgets in ipywidgets 8 need keyword arguments
+  (`IntSlider(value=..., min=..., ...)`); positional ones throw a
+  confusing `TypeError`.
+
+What sizing mode picks (made-up prices):
+
+| prices | heat pump | tank | battery | PV |
+|---|---|---|---|---|
+| wholesale only | 930 kW | 3.0 MWh | 0 | 0 |
+| + $0.06/kWh grid charges | 0 | 0 | 0 | 94 kWp |
+| + $0.06/kWh and $20/kW-month demand charge | 0 | 0 | 730 kWh | 300 kWp |
+| cheap gas ($4/MMBtu) | 0 | 0 | 0 | 0 |
+| expensive gas ($14/MMBtu) | 1,180 kW | 5.0 MWh | 0 | 0 |
+| cheap batteries ($150/kWh) | 850 kW | 2.1 MWh | 2.4 MWh | 0 |
+
+- The default design in the calculator (1.5 MW heat pump, 4 MWh tank,
+  1 MWp PV) **doesn't pay off**: ~18-year payback. Mostly the PV: each kWp
+  costs ~$137/yr but its energy is worth ~$70 at wholesale prices (lowest
+  exactly when the sun is out).
+- Grid charges on top of wholesale kill the heat pump. What matters is the
+  spark spread (electricity vs gas price), not the COP alone.
+- A demand charge is what makes a battery (and some PV) worth it. Cheap
+  batteries get bought for price arbitrage instead, and then peak grid
+  import goes UP to 2.1 MW.
+- The demand charge here is the year's peak × 12, which overstates a real
+  monthly-peak tariff.
+
 ### Parked: Modelica
 
 I first tried a Modelica (Buildings Library) heat pump + tank exported as
@@ -117,3 +164,5 @@ phase, so it's out for now. It's in the git history if I come back to it.
 - A real PG&E industrial tariff with demand charges
 - Heat pump ~1.5 MW plus a gas boiler, or bigger and no boiler?
 - Add an "unmet heat" slack so infeasible cases still solve
+- Monthly demand charges instead of year-peak × 12
+- Better equipment cost numbers (these are guesses)
